@@ -10,6 +10,11 @@ SpaceHipster.Enemy = function(game, x, y, key, health, enemyBullets) {
 	this.anchor.setTo(0.5);
 	this.health = health;
 	this.enemyBullets = enemyBullets;
+
+	this.enemyTimer = this.game.time.create(false);
+	this.enemyTimer.start();
+
+	this.scheduleShooting();
 };
 
 SpaceHipster.Enemy.prototype = Object.create(Phaser.Sprite.prototype);
@@ -45,5 +50,37 @@ SpaceHipster.Enemy.prototype.damage = function(amount) {
 		emitter.maxParticleSpeed.setTo(200, 200);
 		emitter.gravity = 0;
 		emitter.start(true, 500, null, 100);
+
+		this.enemyTimer.pause();
 	}
+};
+
+SpaceHipster.Enemy.prototype.reset = function(x, y, health, key, scale, speedX, speedY) {
+	Phaser.Sprite.prototype.reset.call(this, x, y, health);
+
+	this.loadTexture(key);
+	this.scale.setTo(scale);
+	this.body.velocity.x = speedX;
+	this.body.velocity.y = speedY;
+
+	this.enemyTimer.resume();
+};
+
+SpaceHipster.Enemy.prototype.scheduleShooting = function() {
+	this.shoot();
+
+	this.enemyTimer.add(Phaser.Timer.SECOND * 2, this.scheduleShooting, this);
+};
+
+SpaceHipster.Enemy.prototype.shoot = function() {
+	var bullet = this.enemyBullets.getFirstExists(false);
+
+	if (!bullet) {
+		bullet = new SpaceHipster.EnemyBullet(this.game, this.x, this.bottom);
+		this.enemyBullets.add(bullet);
+	} else {
+		bullet.reset(this.x, this.y);
+	}
+
+	bullet.body.velocity.y = 100;
 };
